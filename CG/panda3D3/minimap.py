@@ -2,13 +2,14 @@ import ursina
 
 
 class Minimap(ursina.Entity):
-    def __init__(self, game_map, player, enemies):
+    def __init__(self, game_map, player, get_enemies_callback):
         super().__init__(parent=ursina.camera.ui)
         self.scale = (0.2, 0.2)  # 小地图大小
         self.position = (0.4, 0.4)  # 右上角位置
         self.game_map = game_map
         self.player = player
-        self.enemies = enemies
+        self.enemies = get_enemies_callback
+        #self.get_enemies = get_enemies_callback  # 保存获取敌人列表的回调函数
 
         # 创建小地图背景
         self.background = ursina.Entity(
@@ -46,7 +47,7 @@ class Minimap(ursina.Entity):
         max_z = max(self.game_map.grid.keys(), key=lambda p: p[1])[1]
 
         # 计算小地图格子大小
-        tile_size = 0.05  # 每个格子的大小
+        tile_size = 0.05  # 每个格子的大小 0.05
 
         # 创建小地图格子
         for x in range(min_x, max_x + 1, 2):  # 步长为2，与地图网格一致
@@ -106,8 +107,9 @@ class Minimap(ursina.Entity):
             self.enemy_markers.append(marker)
             
         '''
+        enemies_list = self.enemies()  # 调用函数获取敌人列表
         # 只处理有效的敌人
-        for enemy in self.enemies:
+        for enemy in enemies_list:
             # 检查敌人是否仍然有效（未被销毁）
             if enemy.enabled:
                 enemy_x = enemy.position.x

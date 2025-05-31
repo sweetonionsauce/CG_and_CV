@@ -44,7 +44,7 @@ enemies = []
 # 创建玩家
 player = Player(ursina.Vec3(0, 1, 0))
 #初始化小地图
-minimap = Minimap(game_map, player, enemies)
+minimap = Minimap(game_map, player, lambda: enemies)# 传入获取敌人列表的回调
 #刷新敌人
 spawn_enemy()
 
