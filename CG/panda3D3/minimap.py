@@ -2,7 +2,7 @@ import ursina
 
 
 class Minimap(ursina.Entity):
-    def __init__(self, game_map, player, get_enemies_callback):
+    def __init__(self, game_map, player, get_enemies_callback,purple_cube):
         super().__init__(parent=ursina.camera.ui)
         self.scale = (0.2, 0.2)  # 小地图大小
         self.position = (0.4, 0.4)  # 右上角位置
@@ -10,6 +10,7 @@ class Minimap(ursina.Entity):
         self.player = player
         self.enemies = get_enemies_callback
         #self.get_enemies = get_enemies_callback  # 保存获取敌人列表的回调函数
+        self.purple_cube = purple_cube  # 保存紫色方块引用
 
         # 创建小地图背景
         self.background = ursina.Entity(
@@ -34,6 +35,15 @@ class Minimap(ursina.Entity):
 
         # 创建敌人位置标记列表
         self.enemy_markers = []
+
+        # 创建紫色方块标记
+        self.purple_marker = ursina.Entity(
+            parent=self,
+            model='quad',
+            scale=(0.04, 0.04),
+            color=ursina.color.gold,
+            position=(0, 0)
+        )
 
         # 初始化小地图格子
         self.create_map()
@@ -124,6 +134,18 @@ class Minimap(ursina.Entity):
                     position=(pos_x, pos_z)
                 )
                 self.enemy_markers.append(marker)
+
+        # 更新紫色方块位置
+        if self.purple_cube.enabled:
+            cube_x = self.purple_cube.position.x
+            cube_z = self.purple_cube.position.z
+            pos_x = (cube_x - min_x) / (max_x - min_x) - 0.5
+            pos_z = (cube_z - min_z) / (max_z - min_z) - 0.5
+            self.purple_marker.position = (pos_x, pos_z)
+            self.purple_marker.enabled = True
+        else:
+            self.purple_marker.enabled = False
+
     def refresh_map(self):
         """刷新小地图显示"""
         # 清除现有格子

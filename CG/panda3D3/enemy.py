@@ -4,6 +4,8 @@ import ursina
 # 添加优先队列实现
 import heapq
 
+#from CG.panda3D3.main import enemy_death_callback
+
 
 class PriorityQueue:
     def __init__(self):
@@ -53,6 +55,12 @@ class Enemy(ursina.Entity):
         self.current_target_index = 0
         self.repath_interval = 1.0  # 重新计算路径间隔
         self.last_repath_time = 0.0
+
+        self.death_callback = None  # 添加死亡回调
+
+    def set_death_callback(self, callback):
+        """设置死亡回调函数"""
+        self.death_callback = callback
 
     def a_star_search(self, start, goal, map_grid):
         """A*路径搜索算法"""
@@ -131,7 +139,10 @@ class Enemy(ursina.Entity):
         self.color = ursina.color.color(0, color_saturation, 1)
 
         if self.health <= 0:
-            self.enabled=False
+            # 触发死亡回调
+            if self.death_callback:
+                self.death_callback(self)
+            self.enabled = False
             ursina.destroy(self)
         else:
             # 计算移动方向并移动

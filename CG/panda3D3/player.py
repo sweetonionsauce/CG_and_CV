@@ -14,6 +14,12 @@ class Player(FirstPersonController):
             collider="box",
             speed=7
         )
+        # 得分和存活时间属性
+        self.score = 0
+        self.survival_time = 0.0  # 以秒为单位
+        self.start_time = ursina.time.time()  # 记录游戏开始时间
+        self.last_score_time = ursina.time.time()  # 记录上次加分时间
+
         #self.cursor.color = ursina.color.rgb(255, 0, 0, 122)
         self.cursor.color = ursina.color.rgb(255, 0, 0)
         self.gun = ursina.Entity(
@@ -65,4 +71,12 @@ class Player(FirstPersonController):
             if not self.death_message_shown:
                 self.death()
         else:
+            # 更新存活时间
+            current_time = ursina.time.time()
+            self.survival_time = current_time - self.start_time
+
+            # 每秒增加1分（只在整数秒变化时增加）
+            if int(current_time) > int(self.last_score_time):
+                self.score += 1
+                self.last_score_time = current_time
             super().update()
