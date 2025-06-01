@@ -10,11 +10,15 @@ from bullet import Bullet
 import random
 from minimap import Minimap
 from purple_cube import PurpleCube
+import time
 
 game_over = False
 death_display = None
 
 app = ursina.Ursina()
+log_timer = 0.0
+log_interval = 10.0  # 每10秒记录一次,这个是log文件的记录间隔
+
 ursina.window.borderless = False
 ursina.window.title = "Ursina FPS"
 ursina.window.exit_button.visible = False
@@ -121,9 +125,9 @@ def show_death_screen():
     
     
     
-
+    
+    
     """
-
     death_display = ursina.Text(
         text=death_text,
         origin=(0, 0),
@@ -199,14 +203,22 @@ def input(key):
             application.quit()
 def update():
     # 清理已销毁的敌人
-    global enemies, enemies_killed, purple_cubes_collected, game_over
+    global log_timer,enemies, enemies_killed, purple_cubes_collected, game_over
     enemies = [e for e in enemies if e.enabled]
+
+    # 更新日志计时器
+    log_timer += ursina.time.dt
 
     # 更新得分显示
     if not game_over:
         minutes = int(player.survival_time) // 60
         seconds = int(player.survival_time) % 60
         score_text.text = f"Score: {player.score} | Time: {minutes}:{seconds:02d}"
+
+        # 定期记录日志
+        if log_timer >= log_interval:
+            log_timer = 0  # 重置计时器
+            record_score(player.score, player.survival_time, enemies_killed, purple_cubes_collected)
 
     # 敌人自动转向玩家
     for enemy in enemies:
@@ -230,6 +242,27 @@ def update():
         show_death_screen()
         # 隐藏实时得分显示
         score_text.enabled = False
+
+        # 游戏结束时记录最终得分
+        record_score(player.score, player.survival_time, enemies_killed, purple_cubes_collected)
+
+def record_score(score, survival_time, kills, cubes):
+    """记录得分到日志文件"""
+    try:
+        # 格式化时间
+        minutes = int(survival_time) // 60
+        seconds = int(survival_time) % 60
+        time_str = f"{minutes}:{seconds:02d}"
+
+        # 格式化日志条目
+        log_entry = f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Score: {score}, Time: {time_str}, Kills: {kills}, Cubes: {cubes}\n"
+
+        # 写入文件
+        with open("log.txt", "a") as log_file:
+            log_file.write(log_entry)
+
+    except Exception as e:
+        print(f"Error writing to log: {e}")
 
 
 app.run()
