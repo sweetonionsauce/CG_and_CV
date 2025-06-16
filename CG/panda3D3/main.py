@@ -11,17 +11,33 @@ import random
 from minimap import Minimap
 from purple_cube import PurpleCube
 import time
+import keyboard
+import multiprocessing
+
+application.time_scale =1
 
 game_over = False
 death_display = None
+enemy_spawn=False
+paused = False  # 全局暂停标志
+ignore_paused=True
 
 app = ursina.Ursina()
 log_timer = 0.0
 log_interval = 10.0  # 每10秒记录一次,这个是log文件的记录间隔
 
+
 ursina.window.borderless = False
 ursina.window.title = "Ursina FPS"
 ursina.window.exit_button.visible = False
+
+
+controller = FirstPersonController()
+controller.ignore_pause = True
+
+# 确保游戏开始时鼠标是锁定的
+mouse.locked = True
+mouse.visible = False
 
 # 得分显示文本
 score_text = ursina.Text(
@@ -29,6 +45,10 @@ score_text = ursina.Text(
     position=(-0.8, 0.4),  # 左上角位置
     scale=1.5
 )
+
+def update_pause():
+    if held_keys['p']:
+        application.paused = not application.paused
 
 # 在敌人死亡时增加得分
 def enemy_death_callback(enemy):
@@ -50,6 +70,7 @@ def spawn_enemy():
     enemies.append(new_enemy)
     # 每40秒调用一次
     ursina.invoke(spawn_enemy, delay=40)
+
 '''
 # 紫色方块刷新
 def spawn_purple_cube(purple_cube):
@@ -71,8 +92,6 @@ def spawn_purple_cube(cube):
         ursina.invoke(lambda: spawn_purple_cube(cube), delay=5)
 
 
-
-
 # 初始化场景
 floor = Floor()
 game_map = Map()
@@ -92,7 +111,8 @@ purple_cube = PurpleCube(game_map)
 #minimap = Minimap(game_map, player, lambda: enemies)# 传入获取敌人列表的回调
 minimap = Minimap(game_map, player, lambda: enemies, purple_cube)  # 传入紫色方块
 #刷新敌人
-spawn_enemy()
+if enemy_spawn:
+    spawn_enemy()
 # 刷新紫色方块
 spawn_purple_cube(purple_cube)  # 传递参数
 
@@ -119,13 +139,6 @@ def show_death_screen():
     Survival Time: {minutes}:{seconds:02d}
     Enemies Killed: {enemies_killed}
     Purple Cubes Collected: {purple_cubes_collected}
-    
-    
-    
-    
-    
-    
-    
     
     """
     death_display = ursina.Text(
@@ -184,12 +197,19 @@ def restart_game():
     score_text.enabled = True
 
 
-# 添加全局计数器
+# 添加全局计数器W
 enemies_killed = 0
 purple_cubes_collected = 0
 
 
 def input(key):
+    global paused
+    # 无论是否暂停都处理P键和ESC键
+    if key == 'p':
+        toggle_pause()
+        return  # 处理完暂停后直接返回，避免触发其他按键
+
+
     if key == "left mouse down" and player.health > 0:
         b_pos = player.position + ursina.Vec3(0, 2, 0)
         bullet = Bullet(b_pos, player.world_rotation_y, -player.camera_pivot.world_rotation_x)
@@ -201,9 +221,20 @@ def input(key):
 
     if key == "escape":
             application.quit()
+
+'''
+    # 按P键暂停，按C继续     这样阻塞进程会导致问题
+    while(key == "p"):
+        keyboard.wait("c")
+        break
+'''
 def update():
+
     # 清理已销毁的敌人
-    global log_timer,enemies, enemies_killed, purple_cubes_collected, game_over
+    global log_timer, enemies, enemies_killed, purple_cubes_collected, game_over,paused
+    if paused:
+        return
+
     enemies = [e for e in enemies if e.enabled]
 
     # 更新日志计时器
@@ -232,7 +263,7 @@ def update():
         player.score += 1000  # 收集紫色方块得1000分
         purple_cubes_collected += 1
     # 更新小地图位置
-    #minimap.update_positions()
+    # minimap.update_positions()
     # 更新小地图位置，传入当前的敌人列表
     minimap.update_positions()
 
@@ -245,6 +276,7 @@ def update():
 
         # 游戏结束时记录最终得分
         record_score(player.score, player.survival_time, enemies_killed, purple_cubes_collected)
+    print("运行")
 
 def record_score(score, survival_time, kills, cubes):
     """记录得分到日志文件"""
@@ -264,5 +296,24 @@ def record_score(score, survival_time, kills, cubes):
     except Exception as e:
         print(f"Error writing to log: {e}")
 
+
+# 添加暂停/恢复功能
+def toggle_pause():
+    global paused
+
+    # 切换暂停状态
+    paused = not paused
+
+    # 控制鼠标锁定状态
+    if paused:
+        # 暂停时释放鼠标
+        mouse.locked = False
+        mouse.visible = True
+        print("游戏已暂停")
+    else:
+        # 恢复时锁定鼠标
+        mouse.locked = True
+        mouse.visible = False
+        print("游戏已恢复")
 
 app.run()
