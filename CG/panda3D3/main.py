@@ -18,7 +18,7 @@ application.time_scale =1
 
 game_over = False
 death_display = None
-enemy_spawn=False
+enemy_spawn=True
 paused = False  # 全局暂停标志
 ignore_paused=True
 

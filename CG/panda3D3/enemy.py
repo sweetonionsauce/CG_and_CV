@@ -45,7 +45,7 @@ class Enemy(ursina.Entity):
         self.id = identifier
         self.username = username
         self.player = player  # 保存玩家引用
-        self.speed = 3  # 移动速度
+        self.speed = 1  # 移动速度
         self.attack_damage = 30  # 攻击伤害
         self.attack_interval = 1.0  # 攻击间隔（秒）
         self.attack_timer = 0.0  # 攻击计时器
