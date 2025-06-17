@@ -1,4 +1,6 @@
 import os
+from os.path import exists
+
 import ursina
 from ursina.prefabs.first_person_controller import FirstPersonController
 from ursina import *
@@ -11,6 +13,7 @@ import random
 from minimap import Minimap
 from purple_cube import PurpleCube
 import time
+import sys
 import keyboard
 import multiprocessing
 
@@ -276,7 +279,6 @@ def update():
 
         # 游戏结束时记录最终得分
         record_score(player.score, player.survival_time, enemies_killed, purple_cubes_collected)
-    print("运行")
 
 def record_score(score, survival_time, kills, cubes):
     """记录得分到日志文件"""
@@ -289,9 +291,13 @@ def record_score(score, survival_time, kills, cubes):
         # 格式化日志条目
         log_entry = f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Score: {score}, Time: {time_str}, Kills: {kills}, Cubes: {cubes}\n"
 
+
         # 写入文件
-        with open("log.txt", "a") as log_file:
+        os.makedirs(os.path.join("log", sys.argv[1]), exist_ok=True)
+        with open(os.path.join("log", sys.argv[1], "log.txt"), "a") as log_file:
             log_file.write(log_entry)
+
+        print(os.path.join("log", sys.argv[1], "log.txt"))
 
     except Exception as e:
         print(f"Error writing to log: {e}")
